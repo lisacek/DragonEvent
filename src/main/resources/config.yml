@@ -1,0 +1,188 @@
+#
+# DragonEvent by lisacekmore
+update-notify: true
+
+#  database
+#  type: sqlite/mysql
+database:
+  type: sqlite
+  host: localhost
+  port: 3306
+  database: dragonrewards
+  username: root
+  password: ''
+
+# Plugin can be used as Superbvote
+# replacement or other votifier plugin
+votifier:
+  settings:
+    # Disable votifier hook
+    enable: true
+
+    # Should we receive offline votes
+    offline-votes: true
+
+    # Should player be rewarded for voting
+    vote-reward:
+      enable: false
+      commands:
+        - 'tellraw %player% {"text":"Here is your reward!"}'
+
+    # Should we display vote goal as bossbar
+    bossbar:
+      enable: true
+      rainbow: true
+      # BarColor: BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+      color: RED
+      text: "&#03fc28&lDragonEvent &8&l| &e%votes%&7/&6%goal% &7Votes"
+
+    # Should we announce votes
+    announce-votes:
+      enable: true
+      message:
+        - "&7%player% &7has voted for the server! /vote"
+
+    # Should we announce when dragon spawns
+    announce-spawn:
+      enable: true
+      message:
+        - "&7The dragon has spawned at %x% %y% %z% in %world%!"
+
+    # Should remind players to vote
+    reminder:
+      enable: true
+      interval: 30
+      message:
+        - "&7Please vote for our server! /vote"
+
+    # vote goal to trigger dragon spawn
+    goal: 10
+  # Enabled Dragon spawn locations (random will be picked)
+  dragon:
+    locations:
+      - "test"
+
+# Dragon spawn locations
+locations:
+  test:
+    world: "world"
+    x: 0
+    y: 100
+    z: 0
+
+# Classic /vote command
+vote-command:
+  enable: true
+  message:
+    - "https://topg.org/minecraft-servers/server-1"
+
+# Top voters command
+vote-top:
+  enable: true
+  message:
+    - "&8&l&m━━━━━━━━"
+    - "&r &7Top 10 Voters"
+    - "&7%positions%"
+    - "&8&l&m━━━━━━━━"
+  positions: "&r &6%pos%&7. &e%player% &7- &c%votes%"
+
+# Dragon Settings
+dragon:
+  # Bed, Tnt, EnderCrystal, Anchor damage
+  disable-explosion-damage: true
+  # Should dragon fly around
+  moving: false
+  glow:
+    enable: true
+    rainbow: true
+    color: RED
+  health: 200
+  # Should health increase with players
+  dynamic-health:
+    enable: false
+    amplifier: 0.1
+
+# Rewards for killing dragon
+rewards:
+  enable: true
+  top:
+    1:
+      - 'tellraw %player% {"text":"You voted 4 times and got a special reward!"}'
+    2:
+      - 'tellraw %player% {"text":"You voted 4 times and got a special reward!2"}'
+    3:
+      - 'tellraw %player% {"text":"You voted 4 times and got a special reward!3"}'
+  # Chance to get reward
+  regular:
+    enable: true
+    permission: "dragonrewards.regular"
+    chance: 50
+    rewards:
+      - 'tellraw %player% {"text":"You got an reward for damaging dragon!"}'
+  extra:
+    enable: true
+    permission: "dragonrewards.extra"
+    chance: 25
+    rewards:
+      - 'tellraw %player% {"text":"You got extra reward!"}'
+
+# Enderdragon health bar
+actionbar:
+  enable: true
+  text: "&c%dragon_health% &7❤ &8| &c%dealt_damage% &7❤"
+
+# EnderDragon health bossbar
+bossbar:
+  enable: true
+  text: "&c%dragon_health% &7❤ &8| &c%max_health% &7❤"
+  rainbow: true
+  color: RED
+
+# Title announcements
+titles:
+  enable: true
+  killed:
+    enable: true
+    title: "&c&lDragon Killed"
+    subtitle: "&7You have killed the dragon!"
+    fadein: 20
+    stay: 60
+    fadeout: 20
+  spawn:
+    enable: true
+    title: "&c&lDragon Spawned"
+    subtitle: "&7The dragon has spawned!"
+    fadein: 20
+    stay: 60
+    fadeout: 20
+
+# Chat announcements
+#  including top damage!
+announcements:
+  enable: true
+  spawn:
+    enable: true
+    message:
+      - "&7The dragon has spawned!"
+  killed:
+    enable: true
+    message:
+      - "&7The dragon has been killed by &c%player%&7!"
+  top:
+    enable: true
+    positions: "&r &6%pos%&7. &e%player% &7- &c%dealt_damage%"
+    message:
+      - "&8&l&m━━━━━━━━━━━━━━━━━━━━━"
+      - "&r &7Top 10 Dragon Damage"
+      - "&7%positions%"
+      - "&8&l&m━━━━━━━━━━━━━━━━━━━━━"
+
+# Help command
+help:
+  permissions: dragonrewards.admin
+  message:
+    - "&8&l&m━━━━━━━━&8&l[ &dDragonEvent &8&l]━━━━━━━━━━━━━"
+    - " &d/de start &8- &7Starts dragon event on your location"
+    - " &d/de stop &8- &7Stops current dragon event"
+    - " &d/de reload &8- &7Reloads config"
+    - "&8&l&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -1,9 +1,8 @@
-package cz.basicland.blibs.shared.databases.hikari;
+package cz.lisacek.dragonevent.sql;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import cz.basicland.blibs.shared.dataholder.Universal;
-import lombok.Getter;
+import cz.lisacek.dragonevent.DragonEvent;
 
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetProvider;
@@ -16,20 +15,12 @@ import java.util.concurrent.CompletableFuture;
 
 public class DatabaseConnection {
 
-    @Getter
     private final ConnectionInfo info;
-
-    @Getter
-    private final Object plugin;
 
     private HikariDataSource hikari;
 
-    @Getter
-    private boolean connected = false;
-
-    public DatabaseConnection(ConnectionInfo info, Object plugin) {
+    public DatabaseConnection(ConnectionInfo info) {
         this.info = info;
-        this.plugin = plugin;
     }
 
     public void connect() {
@@ -44,7 +35,7 @@ public class DatabaseConnection {
             hikari.addDataSourceProperty("characterEncoding", "utf8");
         } else {
             //check if file exists
-            File file = new File(Universal.getPath(plugin) + "/" + info.getDatabase());
+            File file = new File(DragonEvent.getInstance().getDataFolder() + "/" + info.getDatabase());
             if (!file.exists()) {
                 try {
                     file.createNewFile();
@@ -54,7 +45,7 @@ public class DatabaseConnection {
             }
             HikariConfig config = new HikariConfig();
             config.setDriverClassName("org.sqlite.JDBC");
-            config.setJdbcUrl("jdbc:sqlite:" + Universal.getPath(plugin) + "/" + info.getDatabase());
+            config.setJdbcUrl("jdbc:sqlite:" + DragonEvent.getInstance().getDataFolder() + "/" + info.getDatabase());
             this.hikari = new HikariDataSource(config);
         }
 
@@ -73,16 +64,10 @@ public class DatabaseConnection {
 
         if (connection == null)
             throw new IllegalStateException("No connection");
-
-        this.connected = true;
     }
 
     public CompletableFuture<Boolean> update(String query, Object... parameters) {
         return CompletableFuture.supplyAsync(() -> {
-
-            if (!isConnected())
-                return false;
-
             try (Connection connection = hikari.getConnection();
                  PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -103,9 +88,6 @@ public class DatabaseConnection {
 
     public CompletableFuture<ResultSet> query(String query, Object... parameters) {
         return CompletableFuture.supplyAsync(() -> {
-            if (!isConnected())
-                return null;
-
             try (Connection connection = hikari.getConnection();
                  PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -133,5 +115,13 @@ public class DatabaseConnection {
     public void close() {
         if (hikari != null)
             hikari.close();
+    }
+
+    public ConnectionInfo getInfo() {
+        return info;
+    }
+
+    public HikariDataSource getHikari() {
+        return hikari;
     }
 }

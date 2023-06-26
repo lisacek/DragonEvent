@@ -1,9 +1,7 @@
-package cz.basicland.blibs.shared.databases.hikari;
+package cz.lisacek.dragonevent.sql;
 
-import cz.basicland.blibs.shared.dataholder.Config;
-import lombok.Getter;
+import org.bukkit.configuration.file.YamlConfiguration;
 
-@Getter
 public class ConnectionInfo {
     private final String host;
     private final int port;
@@ -30,35 +28,28 @@ public class ConnectionInfo {
         this.sqlLite = true;
     }
 
-    public static ConnectionInfo load(Config config, String name) {
-        if (config == null)
-            return null;
+    public boolean isSqlLite() {
+        return sqlLite;
+    }
 
-        ConnectionInfo info;
-        if (name.endsWith(".db")) {
-            info = new ConnectionInfo(name);
-            return info;
-        }
+    public int getPort() {
+        return port;
+    }
 
-        if (!name.contains("Databases.")) {
-            info = new ConnectionInfo(
-                    config.getString(name + ".Host"),
-                    config.getInt(name + ".Port", 3306),
-                    config.getString(name + ".User"),
-                    config.getString(name + ".Pass"),
-                    config.getString(name + ".DB")
-            );
-        } else {
-            info = new ConnectionInfo(
-                    config.getString("Databases." + name + ".Host"),
-                    config.getInt("Databases." + name + ".Port", 3306),
-                    config.getString("Databases." + name + ".User"),
-                    config.getString("Databases." + name + ".Pass"),
-                    config.getString("Databases." + name + ".DB")
-            );
-        }
+    public String getDatabase() {
+        return database;
+    }
 
-        return info;
+    public String getHost() {
+        return host;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getUser() {
+        return user;
     }
 
     @Override

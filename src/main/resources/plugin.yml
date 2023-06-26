@@ -1,5 +1,9 @@
 name: DragonEvent
 version: '${project.version}'
 main: cz.lisacek.dragonevent.DragonEvent
-api-version: '1.20'
+api-version: 1.13
 authors: [lisacekmore]
+commands:
+  dragonevent:
+  vote:
+  votetop:
