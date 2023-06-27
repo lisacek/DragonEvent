@@ -102,6 +102,11 @@ dragon:
   dynamic-health:
     enable: false
     amplifier: 0.1
+  auto-spawn:
+    enable: true
+    interval: 60 # minutes
+    locations:
+      - "test"
 
 # Rewards for killing dragon
 rewards:

@@ -3,13 +3,16 @@ package cz.lisacek.dragonevent.managers;
 import cz.lisacek.dragonevent.DragonEvent;
 import cz.lisacek.dragonevent.cons.DePlayer;
 import cz.lisacek.dragonevent.cons.Dragon;
+import cz.lisacek.dragonevent.cons.DragonLoc;
 import cz.lisacek.dragonevent.cons.SpawnOptions;
 import cz.lisacek.dragonevent.utils.ColorHelper;
 import cz.lisacek.dragonevent.utils.Console;
 import cz.lisacek.dragonevent.utils.GlowHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
 
 import java.sql.SQLException;
@@ -23,6 +26,25 @@ public class EventManager {
     private final List<Dragon> dragonList = new ArrayList<>();
 
     private final Map<String, DePlayer> playerMap = new HashMap<>();
+
+    private final List<Location> dragonLocList = new ArrayList<>();
+
+    private EventManager() {
+        YamlConfiguration config = DragonEvent.getInstance().getConfig();
+        if (!config.getBoolean("dragon.auto-spawn.enable")) return;
+        loadLocations();
+        autoSpawn(config);
+    }
+
+    private void loadLocations() {
+        Objects.requireNonNull(DragonEvent.getInstance().getConfig().getConfigurationSection("locations")).getKeys(false).forEach(l -> {
+            Location location = new Location(Bukkit.getWorld(Objects.requireNonNull(DragonEvent.getInstance().getConfig().getString("locations." + l + ".world"))),
+                    DragonEvent.getInstance().getConfig().getDouble("locations." + l + ".x"),
+                    DragonEvent.getInstance().getConfig().getDouble("locations." + l + ".y"),
+                    DragonEvent.getInstance().getConfig().getDouble("locations." + l + ".z"));
+            dragonLocList.add(location);
+        });
+    }
 
     public Dragon spawnDragon(SpawnOptions spawnOptions) {
         double hp = spawnOptions.getHp();
@@ -85,6 +107,35 @@ public class EventManager {
         Dragon d = new Dragon(entity, spawnOptions.getHp(), spawnOptions.isMoving());
         dragonList.add(d);
         return d;
+    }
+
+    public void autoSpawn(YamlConfiguration config) {
+        Bukkit.getScheduler().runTaskTimer(DragonEvent.getInstance(), () ->
+                        spawnDragon(config, dragonLocList),
+                config.getInt("dragon.auto-spawn.interval") * 20L * 60L,
+                config.getInt("dragon.auto-spawn.interval") * 20L * 60L);
+    }
+
+    public Dragon spawnDragon(YamlConfiguration config, List<Location> dragonLocList) {
+        double hp = config.getDouble("dragon.health");
+        if (config.getBoolean("dragon.dynamic-health.enable")) {
+            double amplifier = config.getDouble("dragon.dynamic-health.amplifier");
+            int onlinePlayers = Bukkit.getOnlinePlayers().size();
+            hp = hp + (hp * (onlinePlayers * amplifier));
+        }
+        Location location = dragonLocList.get((int) (Math.random() * dragonLocList.size()));
+        SpawnOptions spawnOptions = new SpawnOptions
+                .SpawnOptionsBuilder()
+                .setDragonLoc(new DragonLoc("test", location))
+                .setDragonLocList(new ArrayList<>())
+                .setEverywhere(false)
+                .setHp(hp)
+                .setRandomLocation(false)
+                .setMoving(config.getBoolean("dragon.moving"))
+                .setGlowing(config.getBoolean("dragon.glow.enable"))
+                .setAnnounceSpawn(config.getBoolean("votifier.settings.announce-spawn.enable"))
+                .build();
+        return EventManager.getINSTANCE().spawnDragon(spawnOptions);
     }
 
     //get DePlayer

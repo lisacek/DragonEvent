@@ -59,25 +59,7 @@ public class VoteManager {
         votes++;
         if (votes >= votesNeeded) {
             votes = 0;
-            double hp = config.getDouble("dragon.health");
-            if (config.getBoolean("dragon.dynamic-health.enable")) {
-                double amplifier = config.getDouble("dragon.dynamic-health.amplifier");
-                int onlinePlayers = Bukkit.getOnlinePlayers().size();
-                hp = hp + (hp * (onlinePlayers * amplifier));
-            }
-            Location location = dragonLocList.get((int) (Math.random() * dragonLocList.size()));
-            SpawnOptions spawnOptions = new SpawnOptions
-                    .SpawnOptionsBuilder()
-                    .setDragonLoc(new DragonLoc("test", location))
-                    .setDragonLocList(new ArrayList<>())
-                    .setEverywhere(false)
-                    .setHp(hp)
-                    .setRandomLocation(false)
-                    .setMoving(config.getBoolean("dragon.moving"))
-                    .setGlowing(config.getBoolean("dragon.glow.enable"))
-                    .setAnnounceSpawn(config.getBoolean("votifier.settings.announce-spawn.enable"))
-                    .build();
-            dragon = EventManager.getINSTANCE().spawnDragon(spawnOptions);
+            dragon = EventManager.getINSTANCE().spawnDragon(config, dragonLocList);
         }
     }
 
