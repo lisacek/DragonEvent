@@ -90,6 +90,7 @@ vote-top:
 dragon:
   # Bed, Tnt, EnderCrystal, Anchor damage
   disable-explosion-damage: true
+  griefing: false
   # Should dragon fly around
   moving: false
   glow:

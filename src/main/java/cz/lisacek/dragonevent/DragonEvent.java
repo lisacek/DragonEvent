@@ -211,6 +211,7 @@ public final class DragonEvent extends JavaPlugin {
     @Override
     public void onDisable() {
         if (listener != null) listener.getBossBar().removeAll();
+        if(connection != null) connection.close();
         Console.info("&7Plugin &cdisabled&7!");
     }
 

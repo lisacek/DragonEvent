@@ -4,12 +4,15 @@ import cz.lisacek.dragonevent.DragonEvent;
 import cz.lisacek.dragonevent.cons.DePlayer;
 import cz.lisacek.dragonevent.cons.Dragon;
 import cz.lisacek.dragonevent.managers.EventManager;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -37,6 +40,16 @@ public class EventsListener implements Listener {
                     dragon.getDamageMap().put(damager, dragon.getDamageMap().get(damager) + event.getDamage());
                 }
             }
+        }
+    }
+
+    @EventHandler
+    public void onEntityExplode(EntityExplodeEvent event) {
+        YamlConfiguration config = DragonEvent.getInstance().getConfig();
+        if (event.getEntity() instanceof EnderDragon) {
+            if (config.getBoolean("dragon.griefing")) return;
+            event.blockList().clear();
+            event.setCancelled(true);
         }
     }
 

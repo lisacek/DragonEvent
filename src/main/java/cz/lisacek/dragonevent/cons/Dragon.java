@@ -8,7 +8,7 @@ import cz.lisacek.dragonevent.utils.GlowHelper;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
@@ -19,10 +19,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,12 +39,30 @@ public class Dragon {
     private Color rgb = java.awt.Color.getHSBColor((float) this.hue / 360.0F, 1.0F, 1.0F);
     private String hex = String.format("<#%02X%02X%02X>", 0, 0, 0);
     private final double maxHealth;
+    private final boolean isMoving;
 
-    public Dragon(EnderDragon dragon, double maxHealth) {
+    private final Location clone;
+
+    private final DecimalFormat DF = new DecimalFormat("#.##");
+
+    public Dragon(EnderDragon dragon, double maxHealth, boolean isMoving) {
+        this.isMoving = isMoving;
         YamlConfiguration config = DragonEvent.getInstance().getConfig();
         this.dragon = dragon;
         this.isDead = isDead();
+        this.clone = dragon.getLocation().clone();
         this.announceHp = announceHp();
+        if(!isMoving) {
+            Bukkit.getScheduler().runTaskTimer(DragonEvent.getInstance(), (task) -> {
+                if(dragon.getHealth() == 1) {
+                    dragon.setHealth(0);
+                    task.cancel();
+                } else {
+                    keepLocation();
+                }
+            }, 0, 1L);
+        }
+
         if (config.getBoolean("bossbar.enable")) {
             if (!config.getBoolean("bossbar.rainbow")) {
                 BarColor color = BarColor.valueOf(config.getString("bossbar.color"));
@@ -130,9 +148,7 @@ public class Dragon {
             }
             if (config.getBoolean("dragon.glow.rainbow")) {
                 //random ChatColor except for RESET, MAGIC, BOLD, WHITE, BLACK, UNDERLINE, STRIKETHROUGH, ITALIC, OBFUSCATED, GRAY, DARK_GRAY
-                ChatColor[] colors = {ChatColor.AQUA, ChatColor.BLUE, ChatColor.DARK_AQUA, ChatColor.DARK_BLUE, ChatColor.DARK_GREEN, ChatColor.DARK_PURPLE, ChatColor.DARK_RED, ChatColor.GOLD, ChatColor.GREEN, ChatColor.LIGHT_PURPLE, ChatColor.RED, ChatColor.YELLOW};
-                ChatColor color = colors[new Random().nextInt(colors.length)];
-                GlowHelper.setGlowing(dragon, color);
+                GlowHelper.setGlowing(dragon, null);
             }
         }, 5, 5);
     }
@@ -149,11 +165,11 @@ public class Dragon {
                         boolean damagePlayer = damageMap.containsKey(player);
                         if (damagePlayer) {
                             text = text
-                                    .replace("%dragon_health%", String.valueOf(dragon.getHealth()))
-                                    .replace("%dealt_damage%", String.valueOf(damageMap.get(player)));
+                                    .replace("%dragon_health%", DF.format(dragon.getHealth()))
+                                    .replace("%dealt_damage%", DF.format(damageMap.get(player)));
                         } else {
                             text = text
-                                    .replace("%dragon_health%", String.valueOf(dragon.getHealth()))
+                                    .replace("%dragon_health%", DF.format(dragon.getHealth()))
                                     .replace("%dealt_damage%", "0");
                         }
                         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ColorHelper.colorize(text)));
@@ -167,8 +183,8 @@ public class Dragon {
                     countdownBossBar.setProgress(dragon.getHealth() / maxHealth);
                     //rename  base on dragon health
                     countdownBossBar.setTitle(ColorHelper.colorize(config.getString("bossbar.text")
-                            .replace("%dragon_health%", String.valueOf(dragon.getHealth()))
-                            .replace("%max_health%", String.valueOf(maxHealth))));
+                            .replace("%dragon_health%", DF.format(dragon.getHealth()))
+                            .replace("%max_health%", DF.format(maxHealth))));
                 }
             });
         }, 1, 1);
@@ -193,7 +209,7 @@ public class Dragon {
                         message = topLine
                                 .replace("%pos%", String.valueOf(i + 1))
                                 .replace("%player%", entry.getKey().getName())
-                                .replace("%dealt_damage%", String.valueOf(entry.getValue()));
+                                .replace("%dealt_damage%", DF.format(entry.getValue()));
                         i++;
                         Bukkit.broadcastMessage(ColorHelper.colorize(message));
                     }
@@ -242,6 +258,14 @@ public class Dragon {
 
     public EnderDragon getDragon() {
         return dragon;
+    }
+
+    public boolean isMoving() {
+        return isMoving;
+    }
+
+    public void keepLocation() {
+        dragon.teleport(clone);
     }
 
     private void increaseHue() {

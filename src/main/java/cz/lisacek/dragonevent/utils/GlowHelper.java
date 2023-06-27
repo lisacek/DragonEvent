@@ -1,72 +1,80 @@
 package cz.lisacek.dragonevent.utils;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Random;
-import java.util.Map.Entry;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Entity;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
+import java.util.*;
+
 public class GlowHelper {
     private static final Random RANDOM = new Random();
-    private static final String SCOREBOARD_TEAM_NAME = "de_glow_%entity_id%";
+    private static final String TEAM_NAME_FORMAT = "de_glow_%entity_id%";
     private static final Scoreboard SCOREBOARD = Bukkit.getScoreboardManager().getMainScoreboard();
-    private static Map<Integer, Team> teams = new HashMap();
+    private static Map<Integer, Team> teams = new HashMap<>();
 
     private GlowHelper() {
     }
 
     public static void unregisterTeams() {
-        Iterator var0 = teams.entrySet().iterator();
-
-        while(var0.hasNext()) {
-            Entry var1 = (Entry)var0.next();
-
+        for (Team team : teams.values()) {
             try {
-                ((Team)var1.getValue()).unregister();
-            } catch (Exception var3) {
+                team.unregister();
+            } catch (Exception ignored) {
             }
         }
 
         teams.clear();
     }
 
-    public static void unregisterTeam(Entity var0) {
-        Team var1 = SCOREBOARD.getTeam("pp_glow_%entity_id%".replace("%entity_id%", Integer.toString(var0.getEntityId())));
-        if (var1 != null) {
-            var1.unregister();
+    public static void unregisterTeam(Entity entity) {
+        int entityId = entity.getEntityId();
+        String teamName = TEAM_NAME_FORMAT.replace("%entity_id%", Integer.toString(entityId));
+        Team team = SCOREBOARD.getTeam(teamName);
+        if (team != null) {
+            team.unregister();
         }
 
-        teams.remove(var0.getEntityId());
+        teams.remove(entityId);
     }
 
-    public static void setGlowing(Entity var0, ChatColor var1) {
-        String var2 = "pp_glow_%entity_id%".replace("%entity_id%", Integer.toString(var0.getEntityId()));
-        if (SCOREBOARD.getTeam(var2) == null) {
-            teams.put(var0.getEntityId(), SCOREBOARD.registerNewTeam(var2));
+    public static void setGlowing(Entity entity, ChatColor color) {
+        int entityId = entity.getEntityId();
+        String teamName = TEAM_NAME_FORMAT.replace("%entity_id%", Integer.toString(entityId));
+        Team team = SCOREBOARD.getTeam(teamName);
+        if (team == null) {
+            team = SCOREBOARD.registerNewTeam(teamName);
+            teams.put(entityId, team);
         }
 
-        Team var3 = (Team)teams.get(var0.getEntityId());
-        if (!var0.isGlowing()) {
-            var0.setGlowing(true);
+        if (!entity.isGlowing()) {
+            entity.setGlowing(true);
         }
 
-        if (!var3.getEntries().contains(var0.getUniqueId().toString())) {
-            var3.addEntry(var0.getUniqueId().toString());
+        String entry = entity.getUniqueId().toString();
+        if (!team.getEntries().contains(entry)) {
+            team.addEntry(entry);
         }
 
-        if (var1 != null) {
-            var3.setColor(var1);
+        if (color != null) {
+            team.setColor(color);
         } else {
-            LinkedList var4 = new LinkedList(Arrays.asList(ChatColor.values()));
-            var4.removeAll(Arrays.asList(var3.getColor(), ChatColor.BOLD, ChatColor.ITALIC, ChatColor.MAGIC, ChatColor.RESET, ChatColor.STRIKETHROUGH, ChatColor.UNDERLINE));
-            var3.setColor((ChatColor)var4.get(RANDOM.nextInt(var4.size())));
+            LinkedList<ChatColor> availableColors = new LinkedList<>(Arrays.asList(ChatColor.values()));
+            availableColors.removeAll(Arrays.asList(
+                    team.getColor(),
+                    ChatColor.BOLD,
+                    ChatColor.ITALIC,
+                    ChatColor.MAGIC,
+                    ChatColor.RESET,
+                    ChatColor.STRIKETHROUGH,
+                    ChatColor.UNDERLINE,
+                    ChatColor.BLACK,
+                    ChatColor.WHITE,
+                    ChatColor.GRAY,
+                    ChatColor.DARK_GRAY
+            ));
+            team.setColor(availableColors.get(RANDOM.nextInt(availableColors.size())));
         }
     }
 }

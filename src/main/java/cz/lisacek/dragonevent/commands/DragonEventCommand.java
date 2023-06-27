@@ -5,6 +5,7 @@ import cz.lisacek.dragonevent.cons.DragonLoc;
 import cz.lisacek.dragonevent.cons.SpawnOptions;
 import cz.lisacek.dragonevent.managers.EventManager;
 import cz.lisacek.dragonevent.utils.ColorHelper;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -45,16 +46,22 @@ public class DragonEventCommand implements CommandExecutor {
                     return true;
                 }
                 Player player = (Player) commandSender;
+                double hp = config.getDouble("dragon.health");
+                if (config.getBoolean("dragon.dynamic-health.enable")) {
+                    double amplifier = config.getDouble("dragon.dynamic-health.amplifier");
+                    int onlinePlayers = Bukkit.getOnlinePlayers().size();
+                    hp = hp + (hp * (onlinePlayers * amplifier));
+                }
                 SpawnOptions spawnOptions = new SpawnOptions
                         .SpawnOptionsBuilder()
                         .setDragonLoc(new DragonLoc("test", player.getLocation()))
                         .setDragonLocList(new ArrayList<>())
                         .setEverywhere(false)
-                        .setHp(2)
+                        .setHp(hp)
                         .setRandomLocation(false)
-                        .setMoving(false)
-                        .setGlowing(true)
-                        .setAnnounceSpawn(false)
+                        .setMoving(config.getBoolean("dragon.moving"))
+                        .setGlowing(config.getBoolean("dragon.glow.enable"))
+                        .setAnnounceSpawn(config.getBoolean("votifier.settings.announce-spawn.enable"))
                         .build();
                 EventManager.getINSTANCE().spawnDragon(spawnOptions);
                 return true;

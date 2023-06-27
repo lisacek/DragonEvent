@@ -10,6 +10,7 @@ import cz.lisacek.dragonevent.utils.GlowHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 
 import java.sql.SQLException;
@@ -18,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class EventManager {
 
@@ -81,10 +81,10 @@ public class EventManager {
         if (spawnOptions.isGlowing()) {
             GlowHelper.setGlowing(entity, ChatColor.valueOf(DragonEvent.getInstance().getConfig().getString("dragon.glow.color")));
         }
-        if (spawnOptions.isMoving()) {
+        if(spawnOptions.isMoving()) {
             entity.setMaxHealth(hp);
         }
-        Dragon d = new Dragon(entity, spawnOptions.getHp());
+        Dragon d = new Dragon(entity, spawnOptions.getHp(), spawnOptions.isMoving());
         dragonList.add(d);
         return d;
     }
