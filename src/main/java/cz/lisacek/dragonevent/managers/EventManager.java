@@ -29,14 +29,7 @@ public class EventManager {
 
     private final List<Location> dragonLocList = new ArrayList<>();
 
-    private EventManager() {
-        YamlConfiguration config = DragonEvent.getInstance().getConfig();
-        if (!config.getBoolean("dragon.auto-spawn.enable")) return;
-        loadLocations();
-        autoSpawn(config);
-    }
-
-    private void loadLocations() {
+    public void loadLocations() {
         Objects.requireNonNull(DragonEvent.getInstance().getConfig().getConfigurationSection("locations")).getKeys(false).forEach(l -> {
             Location location = new Location(Bukkit.getWorld(Objects.requireNonNull(DragonEvent.getInstance().getConfig().getString("locations." + l + ".world"))),
                     DragonEvent.getInstance().getConfig().getDouble("locations." + l + ".x"),

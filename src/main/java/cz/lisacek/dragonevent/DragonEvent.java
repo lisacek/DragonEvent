@@ -91,6 +91,13 @@ public final class DragonEvent extends JavaPlugin {
         Console.info("&7Plugin &aenabled&7!");
     }
 
+    private void autoSpawn() {
+        YamlConfiguration config = DragonEvent.getInstance().getConfig();
+        if (!config.getBoolean("dragon.auto-spawn.enable", false)) return;
+        EventManager.getINSTANCE().loadLocations();
+        EventManager.getINSTANCE().autoSpawn(config);
+    }
+
     private void createDatabaseTables() {
         Console.info("&7Creating database tables...");
         boolean isSqlite = connection.getInfo().isSqlLite();
@@ -204,13 +211,12 @@ public final class DragonEvent extends JavaPlugin {
 
     private void scheduleTasks() {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
-            Console.info("&7Updating top players...");
             top10votes = VoteManager.getINSTANCE().getTop10votes();
             top10kills = VoteManager.getINSTANCE().getTop10kills();
             top10damage = VoteManager.getINSTANCE().getTop10damage();
         }, 20 * 60, 20 * 60);
-
         Bukkit.getScheduler().runTaskTimerAsynchronously(getInstance(), new UpdateChecker(), 0L, 1728000L);
+        autoSpawn();
     }
 
     public DatabaseConnection getConnection() {

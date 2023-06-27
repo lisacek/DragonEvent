@@ -29,7 +29,6 @@ public class UpdateChecker implements Runnable {
                     connection.disconnect();
                 }
             }
-
             if (isUpdateAvailable()) {
                 Console.info("&7New version of DragonEvent is available! &8(&d" + latestAvailableVersion + "&8)");
             } else {
