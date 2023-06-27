@@ -6,6 +6,7 @@ import cz.lisacek.dragonevent.cons.DePlayer;
 import cz.lisacek.dragonevent.cons.Dragon;
 import cz.lisacek.dragonevent.managers.EventManager;
 import cz.lisacek.dragonevent.managers.VoteManager;
+import cz.lisacek.dragonevent.sql.DatabaseConnection;
 import cz.lisacek.dragonevent.utils.BossBarColorHelper;
 import cz.lisacek.dragonevent.utils.ColorHelper;
 import org.bukkit.Bukkit;
@@ -18,13 +19,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import java.util.List;
+import java.util.Objects;
 
 public class VotifierListener implements Listener {
 
-    private BossBar bossBar = Bukkit.createBossBar(DragonEvent.getInstance().getConfig().getString("votifier.settings.bossbar.text"), BarColor.BLUE, BarStyle.SOLID);
+    private final BossBar bossBar = Bukkit.createBossBar(DragonEvent.getInstance().getConfig().getString("votifier.settings.bossbar.text"), BarColor.BLUE, BarStyle.SOLID);
     private int hue = 0;
     private java.awt.Color rgb = java.awt.Color.getHSBColor((float) this.hue / 360.0F, 1.0F, 1.0F);
-    private String hex = String.format("<#%02X%02X%02X>", 0, 0, 0);
 
     public VotifierListener() {
         if (DragonEvent.getInstance().getConfig().getBoolean("votifier.settings.bossbar.enable")) {
@@ -45,7 +46,7 @@ public class VotifierListener implements Listener {
                     bossBar.setColor(BarColor.valueOf(BossBarColorHelper.getColorNameFromRgb(this.rgb.getRed(), this.rgb.getGreen(), this.rgb.getBlue())));
                 }
                 bossBar.setProgress((double) VoteManager.getINSTANCE().getVotes() / VoteManager.getINSTANCE().getVotesNeeded());
-                bossBar.setTitle(ColorHelper.colorize(DragonEvent.getInstance().getConfig().getString("votifier.settings.bossbar.text")
+                bossBar.setTitle(ColorHelper.colorize(Objects.requireNonNull(DragonEvent.getInstance().getConfig().getString("votifier.settings.bossbar.text"))
                         .replace("%votes%", String.valueOf(VoteManager.getINSTANCE().getVotes()))
                         .replace("%goal%", String.valueOf(VoteManager.getINSTANCE().getVotesNeeded()))
                 ));
@@ -60,6 +61,7 @@ public class VotifierListener implements Listener {
 
     @EventHandler
     public void onVote(VotifierEvent event) {
+        DatabaseConnection connection = DragonEvent.getInstance().getConnection();
         YamlConfiguration config = DragonEvent.getInstance().getConfig();
         String playerName = event.getVote().getUsername();
         Player p = Bukkit.getPlayer(playerName);
@@ -76,26 +78,22 @@ public class VotifierListener implements Listener {
                                 .replace("%player%", playerName)
                                 .replace("%service%", event.getVote().getServiceName())
                                 .replace("%address%", event.getVote().getAddress())
-                                .replace("%time%", event.getVote().getTimeStamp().toString())));
+                                .replace("%time%", event.getVote().getTimeStamp())));
                     }
                 }
             });
         }
 
-        if(config.getBoolean("votifier.settings.vote-reward.enable")) {
+        if (config.getBoolean("votifier.settings.vote-reward.enable")) {
             List<String> commands = config.getStringList("votifier.settings.vote-reward.commands");
             for (String command : commands) {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player%", playerName));
             }
         }
 
-        if (DragonEvent.getInstance().getConnection().getInfo().isSqlLite()) {
-            DragonEvent.getInstance().getConnection().update("INSERT OR IGNORE INTO de_votes (player, votes, last_vote) VALUES (?,?,?)", playerName, 1, System.currentTimeMillis());
-            DragonEvent.getInstance().getConnection().update("UPDATE de_votes SET votes = votes + 1, last_vote = ? WHERE player = ?", System.currentTimeMillis(), playerName);
-        } else {
-            DragonEvent.getInstance().getConnection().update("INSERT IGNORE INTO de_votes (player, votes, last_vote) VALUES (?,?,?)", playerName, 1, System.currentTimeMillis());
-            DragonEvent.getInstance().getConnection().update("UPDATE de_votes SET votes = votes + 1, last_vote = ? WHERE player = ?", System.currentTimeMillis(), playerName);
-        }
+        connection.update(connection.getInfo().isSqlLite() ? "INSERT OR IGNORE INTO de_votes (player, votes, last_vote) VALUES (?,?,?)" : "INSERT IGNORE INTO de_votes (player, votes, last_vote) VALUES (?,?,?)", playerName, 1, System.currentTimeMillis());
+        connection.update("UPDATE de_votes SET votes = votes + 1, last_vote = ? WHERE player = ?", System.currentTimeMillis(), playerName);
+
         DePlayer dePlayer = EventManager.getINSTANCE().getPlayerMap().get(playerName);
         dePlayer.setVotes(dePlayer.getVotes() + 1);
         dePlayer.setLastVote(System.currentTimeMillis());
@@ -107,7 +105,6 @@ public class VotifierListener implements Listener {
         this.hue += 10;
         this.hue %= 360;
         this.rgb = java.awt.Color.getHSBColor((float) this.hue / 360.0F, 1.0F, 1.0F);
-        this.hex = String.format("<#%02X%02X%02X>", this.rgb.getRed(), this.rgb.getGreen(), this.rgb.getBlue());
     }
 
     public BossBar getBossBar() {

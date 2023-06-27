@@ -47,10 +47,6 @@ public class DePlayer {
         this.lastVote = lastVote;
     }
 
-    public long getLastVote() {
-        return lastVote;
-    }
-
     @Override
     public String toString() {
         return "DePlayer{" +

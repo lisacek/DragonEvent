@@ -10,14 +10,10 @@ import cz.lisacek.dragonevent.utils.GlowHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class EventManager {
@@ -33,17 +29,17 @@ public class EventManager {
         final Dragon[] dragon = {null};
         if (spawnOptions.isEverywhere()) {
             spawnOptions.getDragonLocList().forEach(dragonLoc -> {
-                EnderDragon entity = (EnderDragon) dragonLoc.getLocation().getWorld().spawnEntity(dragonLoc.getLocation(), EntityType.ENDER_DRAGON);
+                EnderDragon entity = (EnderDragon) Objects.requireNonNull(dragonLoc.getLocation().getWorld()).spawnEntity(dragonLoc.getLocation(), EntityType.ENDER_DRAGON);
                 dragon[0] = setupEntity(spawnOptions, hp, entity);
             });
         }
         if (spawnOptions.isRandomLocation()) {
             int random = (int) (Math.random() * spawnOptions.getDragonLocList().size());
-            EnderDragon entity = (EnderDragon) spawnOptions.getDragonLocList().get(random).getLocation().getWorld().spawnEntity(spawnOptions.getDragonLocList().get(random).getLocation(), EntityType.ENDER_DRAGON);
+            EnderDragon entity = (EnderDragon) Objects.requireNonNull(spawnOptions.getDragonLocList().get(random).getLocation().getWorld()).spawnEntity(spawnOptions.getDragonLocList().get(random).getLocation(), EntityType.ENDER_DRAGON);
             dragon[0] = setupEntity(spawnOptions, hp, entity);
         }
         if (spawnOptions.getDragonLoc() != null) {
-            EnderDragon entity = (EnderDragon) spawnOptions.getDragonLoc().getLocation().getWorld().spawnEntity(spawnOptions.getDragonLoc().getLocation(), EntityType.ENDER_DRAGON);
+            EnderDragon entity = (EnderDragon) Objects.requireNonNull(spawnOptions.getDragonLoc().getLocation().getWorld()).spawnEntity(spawnOptions.getDragonLoc().getLocation(), EntityType.ENDER_DRAGON);
             dragon[0] = setupEntity(spawnOptions, hp, entity);
         }
         if (spawnOptions.isAnnounceSpawn()) {
@@ -53,27 +49,29 @@ public class EventManager {
                     player.sendMessage(ColorHelper.colorize(message
                             .replace("%x%", String.valueOf(dragon[0].getDragon().getLocation().getBlockX()))
                             .replace("%y%", String.valueOf(dragon[0].getDragon().getLocation().getBlockY()))
-                            .replace("%world%", dragon[0].getDragon().getLocation().getWorld().getName())
+                            .replace("%world%", Objects.requireNonNull(dragon[0].getDragon().getLocation().getWorld()).getName())
                             .replace("%z%", String.valueOf(dragon[0].getDragon().getLocation().getBlockZ()))));
                 }
             });
-        } else if (DragonEvent.getInstance().getConfig().getBoolean("announcements.spawn.enable")) {
-            if (DragonEvent.getInstance().getConfig().getBoolean("titles.spawn.enable")) {
-                Bukkit.getOnlinePlayers().forEach(player -> {
-                    player.sendTitle(ColorHelper.colorize(DragonEvent.getInstance().getConfig().getString("titles.spawn.title")), ColorHelper.colorize(DragonEvent.getInstance().getConfig().getString("titles.spawn.subtitle")),
-                            DragonEvent.getInstance().getConfig().getInt("titles.spawn.fadein"),
-                            DragonEvent.getInstance().getConfig().getInt("titles.spawn.stay"),
-                            DragonEvent.getInstance().getConfig().getInt("titles.spawn.fadeout"));
-                    List<String> messages = DragonEvent.getInstance().getConfig().getStringList("announcements.spawn.message");
-                    for (String message : messages) {
-                        player.sendMessage(ColorHelper.colorize(message));
-                    }
-                });
-            }
+        }
+        if (DragonEvent.getInstance().getConfig().getBoolean("titles.spawn.enable")) {
+            Bukkit.getOnlinePlayers().forEach(player -> player.sendTitle(ColorHelper.colorize(DragonEvent.getInstance().getConfig().getString("titles.spawn.title")), ColorHelper.colorize(DragonEvent.getInstance().getConfig().getString("titles.spawn.subtitle")),
+                    DragonEvent.getInstance().getConfig().getInt("titles.spawn.fadein"),
+                    DragonEvent.getInstance().getConfig().getInt("titles.spawn.stay"),
+                    DragonEvent.getInstance().getConfig().getInt("titles.spawn.fadeout")));
+        }
+        if (DragonEvent.getInstance().getConfig().getBoolean("announcements.spawn.enable")) {
+            Bukkit.getOnlinePlayers().forEach(player -> {
+                List<String> messages = DragonEvent.getInstance().getConfig().getStringList("announcements.spawn.message");
+                for (String message : messages) {
+                    player.sendMessage(ColorHelper.colorize(message));
+                }
+            });
         }
         return dragon[0];
     }
 
+    @SuppressWarnings("deprecation")
     private Dragon setupEntity(SpawnOptions spawnOptions, double hp, EnderDragon entity) {
         entity.setHealth(hp);
         entity.setPhase(spawnOptions.isMoving() ? EnderDragon.Phase.CIRCLING : EnderDragon.Phase.HOVER);
@@ -81,7 +79,7 @@ public class EventManager {
         if (spawnOptions.isGlowing()) {
             GlowHelper.setGlowing(entity, ChatColor.valueOf(DragonEvent.getInstance().getConfig().getString("dragon.glow.color")));
         }
-        if(spawnOptions.isMoving()) {
+        if (spawnOptions.isMoving()) {
             entity.setMaxHealth(hp);
         }
         Dragon d = new Dragon(entity, spawnOptions.getHp(), spawnOptions.isMoving());
@@ -92,7 +90,7 @@ public class EventManager {
     //get DePlayer
     public DePlayer getDePlayer(String player) {
         CompletableFuture<DePlayer> completableFuture = new CompletableFuture<>();
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
+        @SuppressWarnings("deprecation") OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
         if (!playerMap.containsKey(player)) {
             DragonEvent.getInstance().getConnection().query("SELECT * FROM de_stats JOIN de_votes ON de_votes.player = ? WHERE de_stats.player = ?", offlinePlayer.getName(), offlinePlayer.getName()).thenAcceptAsync(rs -> {
                 try {

@@ -5,5 +5,7 @@ api-version: 1.13
 authors: [lisacekmore]
 commands:
   dragonevent:
+    aliases:
+      - de
   vote:
   votetop:

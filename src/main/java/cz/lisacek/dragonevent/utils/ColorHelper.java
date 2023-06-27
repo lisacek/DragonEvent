@@ -3,79 +3,82 @@ package cz.lisacek.dragonevent.utils;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import net.md_5.bungee.api.ChatColor;
 
 public class ColorHelper {
-    private static final List<Pattern> HEX_PATTERNS = Arrays.asList(Pattern.compile("<#([A-Fa-f0-9]){6}>"), Pattern.compile("\\[#([A-Fa-f0-9]){6}\\]"), Pattern.compile("\\{#([A-Fa-f0-9]){6}\\}"), Pattern.compile("\\(#([A-Fa-f0-9]){6}\\)"), Pattern.compile("&#([A-Fa-f0-9]){6}"), Pattern.compile("#([A-Fa-f0-9]){6}"));
+    private static final List<Pattern> HEX_PATTERNS = Arrays.asList(
+            Pattern.compile("<#([A-Fa-f0-9]){6}>"),
+            Pattern.compile("\\[#([A-Fa-f0-9]){6}]"),
+            Pattern.compile("\\{#([A-Fa-f0-9]){6}}"),
+            Pattern.compile("\\(#([A-Fa-f0-9]){6}\\)"),
+            Pattern.compile("&#([A-Fa-f0-9]){6}"),
+            Pattern.compile("#([A-Fa-f0-9]){6}")
+    );
 
     private ColorHelper() {
     }
 
-    public static String colorize(String var0) {
-        Iterator var1 = HEX_PATTERNS.iterator();
+    public static String colorize(String text) {
 
-        while(var1.hasNext()) {
-            Pattern var2 = (Pattern)var1.next();
+        for (Pattern pattern : HEX_PATTERNS) {
+            Matcher matcher = pattern.matcher(text);
 
-            for(Matcher var3 = var2.matcher(var0); var3.find(); var3 = var2.matcher(var0)) {
-                ChatColor var4 = getHexColorOrClosestLegacyColor(cleanHex(var3.group()));
-                String var5 = var0.substring(0, var3.start());
-                String var6 = var0.substring(var3.end());
-                var0 = var5 + var4 + var6;
+            for (; matcher.find(); matcher = pattern.matcher(text)) {
+                ChatColor color = getHexColorOrClosestLegacyColor(cleanHex(matcher.group()));
+                String beforeMatch = text.substring(0, matcher.start());
+                String afterMatch = text.substring(matcher.end());
+                text = beforeMatch + color + afterMatch;
             }
         }
 
-        var0 = ChatColor.translateAlternateColorCodes('&', var0);
-        return var0;
+        text = ChatColor.translateAlternateColorCodes('&', text);
+        return text;
     }
 
-    public static List<String> colorize(List<String> var0) {
-        ArrayList var1 = new ArrayList();
-        Iterator var2 = var0.iterator();
+    public static List<String> colorize(List<String> textList) {
+        List<String> colorizedList = new ArrayList<>();
 
-        while(var2.hasNext()) {
-            String var3 = (String)var2.next();
-            var1.add(colorize(var3));
+        for (String text : textList) {
+            colorizedList.add(colorize(text));
         }
 
-        return var1;
+        return colorizedList;
     }
 
-    private static ChatColor getHexColorOrClosestLegacyColor(String var0) {
+    private static ChatColor getHexColorOrClosestLegacyColor(String hex) {
         if (VersionHelper.getMajorVersionNumber() >= 16) {
-            return ChatColor.of(var0);
+            return ChatColor.of(hex);
         } else {
-            int var1 = Integer.MAX_VALUE;
-            ChatColor var2 = ChatColor.WHITE;
-            Color var3 = Color.decode(var0);
-            ColorHelper.ChatColorToHexMappings[] var4 = ColorHelper.ChatColorToHexMappings.values();
-            int var5 = var4.length;
+            int minSquaredError = Integer.MAX_VALUE;
+            ChatColor closestColor = ChatColor.WHITE;
+            Color targetColor = Color.decode(hex);
+            ChatColorToHexMappings[] mappings = ChatColorToHexMappings.values();
 
-            for(int var6 = 0; var6 < var5; ++var6) {
-                ColorHelper.ChatColorToHexMappings var7 = var4[var6];
-                int var8 = var7.getRed() - var3.getRed();
-                int var9 = var7.getGreen() - var3.getGreen();
-                int var10 = var7.getBlue() - var3.getBlue();
-                int var11 = var8 * var8 + var9 * var9 + var10 * var10;
-                if (var11 < var1) {
-                    var1 = var11;
-                    var2 = var7.getChatColor();
+            for (ChatColorToHexMappings mapping : mappings) {
+                int redDiff = mapping.getRed() - targetColor.getRed();
+                int greenDiff = mapping.getGreen() - targetColor.getGreen();
+                int blueDiff = mapping.getBlue() - targetColor.getBlue();
+                int squaredError = redDiff * redDiff + greenDiff * greenDiff + blueDiff * blueDiff;
+
+                if (squaredError < minSquaredError) {
+                    minSquaredError = squaredError;
+                    closestColor = mapping.getChatColor();
                 }
             }
 
-            return var2;
+            return closestColor;
         }
     }
 
-    private static String cleanHex(String var0) {
-        return var0.replaceAll("[<>\\[\\]\\{\\}\\(\\)&]", "");
+    private static String cleanHex(String hex) {
+        return hex.replaceAll("[<>\\[\\]{}()&]", "");
     }
 
-    private static enum ChatColorToHexMappings {
+    private enum ChatColorToHexMappings {
         BLACK(ChatColor.BLACK, 0),
         DARK_BLUE(ChatColor.DARK_BLUE, 170),
         DARK_GREEN(ChatColor.DARK_GREEN, 43520),
@@ -98,32 +101,27 @@ public class ColorHelper {
         private final int green;
         private final int blue;
 
-        private ChatColorToHexMappings(ChatColor var3, int var4) {
-            this.chatColor = var3;
-            this.red = var4 >> 16 & 255;
-            this.green = var4 >> 8 & 255;
-            this.blue = var4 & 255;
+        ChatColorToHexMappings(ChatColor chatColor, int hex) {
+            this.chatColor = chatColor;
+            this.red = (hex >> 16) & 255;
+            this.green = (hex >> 8) & 255;
+            this.blue = hex & 255;
         }
 
         public ChatColor getChatColor() {
-            return this.chatColor;
+            return chatColor;
         }
 
         public int getRed() {
-            return this.red;
+            return red;
         }
 
         public int getGreen() {
-            return this.green;
+            return green;
         }
 
         public int getBlue() {
-            return this.blue;
-        }
-
-        // $FF: synthetic method
-        private static ColorHelper.ChatColorToHexMappings[] $values() {
-            return new ColorHelper.ChatColorToHexMappings[]{BLACK, DARK_BLUE, DARK_GREEN, DARK_AQUA, DARK_RED, DARK_PURPLE, GOLD, GRAY, DARK_GRAY, BLUE, GREEN, AQUA, RED, LIGHT_PURPLE, YELLOW, WHITE};
+            return blue;
         }
     }
 }

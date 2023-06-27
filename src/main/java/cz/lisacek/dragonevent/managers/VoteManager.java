@@ -9,10 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class VoteManager {
 
@@ -25,8 +22,8 @@ public class VoteManager {
 
     private VoteManager() {
         this.votesNeeded = DragonEvent.getInstance().getConfig().getInt("votifier.settings.goal");
-        DragonEvent.getInstance().getConfig().getConfigurationSection("locations").getKeys(false).forEach(l -> {
-            Location location = new Location(Bukkit.getWorld(DragonEvent.getInstance().getConfig().getString("locations." + l + ".world")),
+        Objects.requireNonNull(DragonEvent.getInstance().getConfig().getConfigurationSection("locations")).getKeys(false).forEach(l -> {
+            Location location = new Location(Bukkit.getWorld(Objects.requireNonNull(DragonEvent.getInstance().getConfig().getString("locations." + l + ".world"))),
                     DragonEvent.getInstance().getConfig().getDouble("locations." + l + ".x"),
                     DragonEvent.getInstance().getConfig().getDouble("locations." + l + ".y"),
                     DragonEvent.getInstance().getConfig().getDouble("locations." + l + ".z"));
@@ -38,17 +35,15 @@ public class VoteManager {
     private int votes = 0;
 
     public void reminderTask() {
-        Bukkit.getScheduler().runTaskTimer(DragonEvent.getInstance(), () -> {
-            Bukkit.getOnlinePlayers().forEach(player -> {
-                List<String> messages = DragonEvent.getInstance().getConfig().getStringList("votifier.settings.reminder.message");
-                for (String message : messages) {
-                    player.sendMessage(ColorHelper.colorize(message
-                            .replace("%votes%", String.valueOf(votes))
-                            .replace("%player%", player.getName())
-                            .replace("%votesNeeded%", String.valueOf(votesNeeded))));
-                }
-            });
-        }, 0, DragonEvent.getInstance().getConfig().getInt("votifier.settings.reminder.interval") * 20L);
+        Bukkit.getScheduler().runTaskTimer(DragonEvent.getInstance(), () -> Bukkit.getOnlinePlayers().forEach(player -> {
+            List<String> messages = DragonEvent.getInstance().getConfig().getStringList("votifier.settings.reminder.message");
+            for (String message : messages) {
+                player.sendMessage(ColorHelper.colorize(message
+                        .replace("%votes%", String.valueOf(votes))
+                        .replace("%player%", player.getName())
+                        .replace("%votesNeeded%", String.valueOf(votesNeeded))));
+            }
+        }), 0, DragonEvent.getInstance().getConfig().getInt("votifier.settings.reminder.interval") * 20L);
     }
 
     public int getVotes() {

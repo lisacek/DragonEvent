@@ -60,36 +60,54 @@ public class PlaceholderManager extends PlaceholderExpansion {
         if (args.length > 0) {
             switch (args[0]) {
                 case "kills":
-                    if (dePlayer != null) {
-                        return String.valueOf(dePlayer.getKills());
-                    }
-                    break;
+                    return getValue(dePlayer, "kills");
                 case "damage":
-                    if (dePlayer != null) {
-                        return String.valueOf(dePlayer.getDamage());
-                    }
-                    break;
+                    return getValue(dePlayer, "damage");
                 case "votes":
-                    if (dePlayer != null) {
-                        return String.valueOf(dePlayer.getVotes());
-                    }
-                    break;
-                case "votesNeeded":
-                    return String.valueOf(VoteManager.getINSTANCE().getVotesNeeded());
-                case "currentVotes":
-                    return String.valueOf(VoteManager.getINSTANCE().getVotes());
+                    return getValue(dePlayer, "votes");
+                case "needed":
+                    return getVotesNeeded();
+                case "current":
+                    return getCurrentVotes();
                 case "top":
                     int position = Integer.parseInt(args[2]);
                     boolean isPlayer = args[3].equalsIgnoreCase("name");
-                    switch (args[1]) {
-                        case "kills":
-                            return isPlayer ? DragonEvent.getInstance().getTopKills(position).getKey() : String.valueOf(DragonEvent.getInstance().getTopKills(position).getValue());
-                        case "damage":
-                            return isPlayer ? DragonEvent.getInstance().getTopDamage(position).getKey() : String.valueOf(DragonEvent.getInstance().getTopDamage(position).getValue());
-                        case "votes":
-                            return isPlayer ? DragonEvent.getInstance().getTopVotes(position).getKey() : String.valueOf(DragonEvent.getInstance().getTopVotes(position).getValue());
-                    }
+                    return getTopValue(args[1], position, isPlayer);
             }
+        }
+        return null;
+    }
+
+    private String getValue(DePlayer dePlayer, String field) {
+        if (dePlayer != null) {
+            switch (field) {
+                case "kills":
+                    return String.valueOf(dePlayer.getKills());
+                case "damage":
+                    return String.valueOf(dePlayer.getDamage());
+                case "votes":
+                    return String.valueOf(dePlayer.getVotes());
+            }
+        }
+        return null;
+    }
+
+    private String getVotesNeeded() {
+        return String.valueOf(VoteManager.getINSTANCE().getVotesNeeded());
+    }
+
+    private String getCurrentVotes() {
+        return String.valueOf(VoteManager.getINSTANCE().getVotes());
+    }
+
+    private String getTopValue(String field, int position, boolean isPlayer) {
+        switch (field) {
+            case "kills":
+                return isPlayer ? DragonEvent.getInstance().getTopKills(position).getKey() : String.valueOf(DragonEvent.getInstance().getTopKills(position).getValue());
+            case "damage":
+                return isPlayer ? DragonEvent.getInstance().getTopDamage(position).getKey() : String.valueOf(DragonEvent.getInstance().getTopDamage(position).getValue());
+            case "votes":
+                return isPlayer ? DragonEvent.getInstance().getTopVotes(position).getKey() : String.valueOf(DragonEvent.getInstance().getTopVotes(position).getValue());
         }
         return null;
     }

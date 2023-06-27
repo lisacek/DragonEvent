@@ -3,6 +3,7 @@ package cz.lisacek.dragonevent.sql;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import cz.lisacek.dragonevent.DragonEvent;
+import cz.lisacek.dragonevent.utils.Console;
 
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetProvider;
@@ -38,7 +39,10 @@ public class DatabaseConnection {
             File file = new File(DragonEvent.getInstance().getDataFolder() + "/" + info.getDatabase());
             if (!file.exists()) {
                 try {
-                    file.createNewFile();
+                    boolean success = file.createNewFile();
+                    if (!success) {
+                        Console.info("&cFailed to create database file!");
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -66,8 +70,8 @@ public class DatabaseConnection {
             throw new IllegalStateException("No connection");
     }
 
-    public CompletableFuture<Boolean> update(String query, Object... parameters) {
-        return CompletableFuture.supplyAsync(() -> {
+    public void update(String query, Object... parameters) {
+        CompletableFuture.supplyAsync(() -> {
             try (Connection connection = hikari.getConnection();
                  PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -121,7 +125,4 @@ public class DatabaseConnection {
         return info;
     }
 
-    public HikariDataSource getHikari() {
-        return hikari;
-    }
 }

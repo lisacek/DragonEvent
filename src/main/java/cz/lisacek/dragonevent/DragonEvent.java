@@ -4,6 +4,7 @@ import cz.lisacek.dragonevent.commands.DragonEventCommand;
 import cz.lisacek.dragonevent.commands.VoteCommand;
 import cz.lisacek.dragonevent.commands.VoteTopCommand;
 import cz.lisacek.dragonevent.cons.DePlayer;
+import cz.lisacek.dragonevent.cons.Dragon;
 import cz.lisacek.dragonevent.cons.Pair;
 import cz.lisacek.dragonevent.listeners.EventsListener;
 import cz.lisacek.dragonevent.listeners.VotifierListener;
@@ -17,10 +18,11 @@ import cz.lisacek.dragonevent.utils.UpdateChecker;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.sql.SQLException;
-import java.util.Map;
+import java.util.*;
 
 public final class DragonEvent extends JavaPlugin {
 
@@ -41,11 +43,11 @@ public final class DragonEvent extends JavaPlugin {
         instance = this;
         // Plugin startup logic
         loadConfig();
-        getCommand("dragonevent").setExecutor(new DragonEventCommand());
+        Objects.requireNonNull(getCommand("dragonevent")).setExecutor(new DragonEventCommand());
         getServer().getPluginManager().registerEvents(new EventsListener(), this);
 
-        Console.info("&7Connecting to database...");
-        if (config.getString("database.type").equalsIgnoreCase("sqlite")) {
+        Console.info("&7Connecting to the database...");
+        if (Objects.requireNonNull(config.getString("database.type")).equalsIgnoreCase("sqlite")) {
             ConnectionInfo info = new ConnectionInfo("database.db");
             connection = new DatabaseConnection(info);
         } else {
@@ -60,69 +62,111 @@ public final class DragonEvent extends JavaPlugin {
         }
         try {
             connection.connect();
-            Console.info("&7Connected to database!");
+            Console.info("&7Connected to the database!");
         } catch (Exception e) {
             e.printStackTrace();
-            Console.info("&cError while connecting to database: " + e.getMessage());
+            Console.info("&cError while connecting to the database: " + e.getMessage());
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
-        if (connection.getInfo().isSqlLite()) {
-            connection.update("CREATE TABLE IF NOT EXISTS de_stats (" +
-                    "    id INTEGER CONSTRAINT de_stats_pk PRIMARY KEY AUTOINCREMENT," +
-                    "    player VARCHAR(90) CONSTRAINT de_stats_pk2 UNIQUE," +
-                    "    kills INTEGER," +
-                    "    damage BIGINT" +
-                    ");;");
-            connection.update("CREATE TABLE IF NOT EXISTS de_votes (" +
-                    "    id INTEGER CONSTRAINT de_votes_pk PRIMARY KEY AUTOINCREMENT," +
-                    "    player VARCHAR(90) CONSTRAINT de_votes_pk2 UNIQUE," +
-                    "    votes INTEGER," +
-                    "    last_vote BIGINT" +
-                    ");");
-        } else {
-            connection.update("CREATE TABLE IF NOT EXISTS de_stats (" +
-                    "    id INTEGER PRIMARY KEY AUTO_INCREMENT," +
-                    "    player VARCHAR(90) UNIQUE," +
-                    "    kills INTEGER," +
-                    "    damage BIGINT" +
-                    ");");
-            connection.update("CREATE TABLE IF NOT EXISTS de_votes (" +
-                    "    id INTEGER PRIMARY KEY AUTO_INCREMENT," +
-                    "    player VARCHAR(90) UNIQUE," +
-                    "    votes INTEGER," +
-                    "    last_vote BIGINT" +
-                    ");");
-        }
+        // Create database tables if they don't exist
+        createDatabaseTables();
 
+        // Load player data from the database
+        loadPlayerData();
+
+        // Load top players
+        loadTopPlayers();
+
+        // Check for PlaceholderAPI
+        checkPlaceholderAPI();
+
+        // Check for Votifier plugin
+        checkVotifier();
+
+        // Schedule tasks
+        scheduleTasks();
+
+        Console.info("&7Plugin &aenabled&7!");
+    }
+
+    private void createDatabaseTables() {
+        Console.info("&7Creating database tables...");
+        boolean isSqlite = connection.getInfo().isSqlLite();
+
+        String statsTableQuery = isSqlite ?
+                "CREATE TABLE IF NOT EXISTS de_stats (" +
+                        "    id INTEGER CONSTRAINT de_stats_pk PRIMARY KEY AUTOINCREMENT," +
+                        "    player VARCHAR(90) CONSTRAINT de_stats_pk2 UNIQUE," +
+                        "    kills INTEGER," +
+                        "    damage BIGINT" +
+                        ");;" :
+                "CREATE TABLE IF NOT EXISTS de_stats (" +
+                        "    id INTEGER PRIMARY KEY AUTO_INCREMENT," +
+                        "    player VARCHAR(90) UNIQUE," +
+                        "    kills INTEGER," +
+                        "    damage BIGINT" +
+                        ");";
+
+        String votesTableQuery = isSqlite ?
+                "CREATE TABLE IF NOT EXISTS de_votes (" +
+                        "    id INTEGER CONSTRAINT de_votes_pk PRIMARY KEY AUTOINCREMENT," +
+                        "    player VARCHAR(90) CONSTRAINT de_votes_pk2 UNIQUE," +
+                        "    votes INTEGER," +
+                        "    last_vote BIGINT" +
+                        ");" :
+                "CREATE TABLE IF NOT EXISTS de_votes (" +
+                        "    id INTEGER PRIMARY KEY AUTO_INCREMENT," +
+                        "    player VARCHAR(90) UNIQUE," +
+                        "    votes INTEGER," +
+                        "    last_vote BIGINT" +
+                        ");";
+
+        connection.update(statsTableQuery);
+        connection.update(votesTableQuery);
+        Console.info("&7Database tables created!");
+    }
+
+    private void loadPlayerData() {
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            Bukkit.getOnlinePlayers().forEach(p -> {
-                DragonEvent.getInstance().getConnection().query("SELECT * FROM de_stats JOIN de_votes ON de_votes.player = ? WHERE de_stats.player = ?", p.getName(), p.getName()).thenAcceptAsync(rs -> {
-                    try {
-                        if (rs.next()) {
-                            DePlayer dePlayer = new DePlayer(p.getName());
-                            dePlayer.setKills(rs.getInt("kills"));
-                            dePlayer.setDamage(rs.getLong("damage"));
-                            dePlayer.setVotes(rs.getInt("votes"));
-                            dePlayer.setLastVote(rs.getLong("last_vote"));
-                            EventManager.getINSTANCE().getPlayerMap().put(p.getName(), dePlayer);
-                        } else {
-                            DePlayer dePlayer = new DePlayer(p.getName());
-                            EventManager.getINSTANCE().getPlayerMap().put(p.getName(), dePlayer);
-                        }
-                    } catch (SQLException e) {
+            Console.info("&7Loading player data from the database...");
 
+            Bukkit.getOnlinePlayers().forEach(p -> DragonEvent.getInstance().getConnection().query(
+                    "SELECT * FROM de_stats JOIN de_votes ON de_votes.player = ? WHERE de_stats.player = ?",
+                    p.getName(), p.getName()
+            ).thenAcceptAsync(rs -> {
+                try {
+                    DePlayer dePlayer = new DePlayer(p.getName());
+                    if (rs.next()) {
+                        dePlayer.setKills(rs.getInt("kills"));
+                        dePlayer.setDamage(rs.getLong("damage"));
+                        dePlayer.setVotes(rs.getInt("votes"));
+                        dePlayer.setLastVote(rs.getLong("last_vote"));
                     }
-                });
-            });
+                    EventManager.getINSTANCE().getPlayerMap().put(p.getName(), dePlayer);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }));
+
+            Console.info("&7Player data loaded!");
+        }, 1);
+    }
+
+    private void loadTopPlayers() {
+        Bukkit.getScheduler().runTaskLater(this, () -> {
             Console.info("&7Loading top players...");
+
             top10votes = VoteManager.getINSTANCE().getTop10votes();
             top10kills = VoteManager.getINSTANCE().getTop10kills();
             top10damage = VoteManager.getINSTANCE().getTop10damage();
-            Console.info("&7Loaded top players!");
-        }, 1);
 
+            Console.info("&7Top players loaded!");
+        }, 1);
+    }
+
+    private void checkPlaceholderAPI() {
         Console.info("&7Checking for PlaceholderAPI...");
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlaceholderManager().register();
@@ -130,8 +174,10 @@ public final class DragonEvent extends JavaPlugin {
         } else {
             Console.info("&cPlaceholderAPI not found, placeholders unavailable!");
         }
-        Console.info("&7Checking for votifier...");
-        //check if nuvotifier is installed
+    }
+
+    private void checkVotifier() {
+        Console.info("&7Checking for Votifier...");
         if (getServer().getPluginManager().getPlugin("Votifier") != null) {
             String message = "&7Votifier plugin found, ";
             if (config.getBoolean("votifier.settings.enable")) {
@@ -139,12 +185,14 @@ public final class DragonEvent extends JavaPlugin {
                 listener = new VotifierListener();
                 getServer().getPluginManager().registerEvents(listener, this);
                 if (config.getBoolean("vote-command.enable")) {
-                    getCommand("vote").setExecutor(new VoteCommand());
+                    Objects.requireNonNull(getCommand("vote")).setExecutor(new VoteCommand());
                 }
                 if (config.getBoolean("vote-top.enable")) {
-                    getCommand("votetop").setExecutor(new VoteTopCommand());
+                    Objects.requireNonNull(getCommand("votetop")).setExecutor(new VoteTopCommand());
                 }
-                if (config.getBoolean("votifier.settings.reminder.enable")) VoteManager.getINSTANCE().reminderTask();
+                if (config.getBoolean("votifier.settings.reminder.enable")) {
+                    VoteManager.getINSTANCE().reminderTask();
+                }
             } else {
                 message += "but votifier function is disabled. &c:(!";
             }
@@ -152,14 +200,17 @@ public final class DragonEvent extends JavaPlugin {
         } else {
             Console.info("&cVotifier plugin not found, function is unavailable!");
         }
+    }
 
+    private void scheduleTasks() {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
+            Console.info("&7Updating top players...");
             top10votes = VoteManager.getINSTANCE().getTop10votes();
             top10kills = VoteManager.getINSTANCE().getTop10kills();
             top10damage = VoteManager.getINSTANCE().getTop10damage();
         }, 20 * 60, 20 * 60);
+
         Bukkit.getScheduler().runTaskTimerAsynchronously(getInstance(), new UpdateChecker(), 0L, 1728000L);
-        Console.info("&7Plugin &aenabled&7!");
     }
 
     public DatabaseConnection getConnection() {
@@ -168,50 +219,43 @@ public final class DragonEvent extends JavaPlugin {
 
     //get top on position
     public Pair<String, Object> getTopVotes(int position) {
-        String top = "";
-        int i = 1;
-        for (Map.Entry<String, Integer> entry : top10votes.entrySet()) {
-            if (i == position) {
-                top = entry.getKey();
-                break;
-            }
-            i++;
-        }
-        return new Pair<>(top, top10votes.get(top));
+        return getPair(position, top10votes);
     }
 
-    //get top on position kills
     public Pair<String, Object> getTopKills(int position) {
-        String top = "";
-        int i = 1;
-        for (Map.Entry<String, Integer> entry : top10kills.entrySet()) {
-            if (i == position) {
-                top = entry.getKey();
-                break;
-            }
-            i++;
-        }
-        return new Pair<>(top, top10kills.get(top));
+        return getPair(position, top10kills);
     }
 
-    //get top on position damage
     public Pair<String, Object> getTopDamage(int position) {
-        String top = "";
-        int i = 1;
-        for (Map.Entry<String, Long> entry : top10damage.entrySet()) {
-            if (i == position) {
-                top = entry.getKey();
-                break;
-            }
-            i++;
+        List<Map.Entry<String, Long>> sortedEntries = new ArrayList<>(top10damage.entrySet());
+        sortedEntries.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
+
+        if (position <= sortedEntries.size()) {
+            Map.Entry<String, Long> entry = sortedEntries.get(position - 1);
+            return new Pair<>(entry.getKey(), entry.getValue());
         }
-        return new Pair<>(top, top10damage.get(top));
+
+        return new Pair<>("none", 0L);
     }
+
+    private Pair<String, Object> getPair(int position, Map<String, Integer> top10kills) {
+        List<Map.Entry<String, Integer>> sortedEntries = new ArrayList<>(top10kills.entrySet());
+        sortedEntries.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
+
+        if (position <= sortedEntries.size()) {
+            Map.Entry<String, Integer> entry = sortedEntries.get(position - 1);
+            return new Pair<>(entry.getKey(), entry.getValue());
+        }
+
+        return new Pair<>("none", 0);
+    }
+
 
     @Override
     public void onDisable() {
         if (listener != null) listener.getBossBar().removeAll();
-        if(connection != null) connection.close();
+        if (connection != null) connection.close();
+        EventManager.getINSTANCE().getDragonList().forEach(Dragon::remove);
         Console.info("&7Plugin &cdisabled&7!");
     }
 
@@ -224,7 +268,10 @@ public final class DragonEvent extends JavaPlugin {
         try {
             File file = new File(getDataFolder(), "config.yml");
             if (!file.exists()) {
-                file.getParentFile().mkdirs();
+                boolean success = file.getParentFile().mkdirs();
+                if (!success) {
+                    Console.info("&cFailed to create config.yml file!");
+                }
                 saveResource("config.yml", false);
             }
             config = new YamlConfiguration();
@@ -235,7 +282,7 @@ public final class DragonEvent extends JavaPlugin {
     }
 
     @Override
-    public YamlConfiguration getConfig() {
+    public @NotNull YamlConfiguration getConfig() {
         return config;
     }
 

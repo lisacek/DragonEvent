@@ -1,7 +1,5 @@
 package cz.lisacek.dragonevent.sql;
 
-import org.bukkit.configuration.file.YamlConfiguration;
-
 public class ConnectionInfo {
     private final String host;
     private final int port;

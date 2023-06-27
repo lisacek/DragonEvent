@@ -8,7 +8,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 
 public class UpdateChecker implements Runnable {
-    private static final String RESOURCE_ID = "59318";
+    private static final String RESOURCE_ID = "110783";
     private String latestAvailableVersion;
 
     @Override
