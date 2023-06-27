@@ -94,12 +94,12 @@ public class VoteManager {
     }
 
     //top 10 de players by damage
-    public Map<String, Long> getTop10damage() {
-        Map<String, Long> top10 = new HashMap<>();
+    public Map<String, Double> getTop10damage() {
+        Map<String, Double> top10 = new HashMap<>();
         DragonEvent.getInstance().getConnection().query("SELECT * FROM de_stats ORDER BY damage DESC LIMIT 10").thenAcceptAsync(rs -> {
             try {
                 while (rs.next()) {
-                    top10.put(rs.getString("player"), Long.parseLong(String.valueOf(rs.getDouble("damage"))));
+                    top10.put(rs.getString("player"), rs.getDouble("damage"));
                 }
             } catch (Exception e) {
                 e.printStackTrace();

@@ -15,6 +15,7 @@ import cz.lisacek.dragonevent.sql.ConnectionInfo;
 import cz.lisacek.dragonevent.sql.DatabaseConnection;
 import cz.lisacek.dragonevent.utils.Console;
 import cz.lisacek.dragonevent.utils.UpdateChecker;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -35,7 +36,7 @@ public final class DragonEvent extends JavaPlugin {
 
     private Map<String, Integer> top10votes;
     private Map<String, Integer> top10kills;
-    private Map<String, Long> top10damage;
+    private Map<String, Double> top10damage;
 
 
     @Override
@@ -132,6 +133,8 @@ public final class DragonEvent extends JavaPlugin {
 
         connection.update(statsTableQuery);
         connection.update(votesTableQuery);
+        Console.info("&7Starting metrics...");
+        new Metrics(this, 18892);
         Console.info("&7Database tables created!");
     }
 
@@ -147,7 +150,7 @@ public final class DragonEvent extends JavaPlugin {
                     DePlayer dePlayer = new DePlayer(p.getName());
                     if (rs.next()) {
                         dePlayer.setKills(rs.getInt("kills"));
-                        dePlayer.setDamage(Long.parseLong(String.valueOf(rs.getDouble("damage"))));
+                        dePlayer.setDamage(rs.getDouble("damage"));
                         dePlayer.setVotes(rs.getInt("votes"));
                         dePlayer.setLastVote(rs.getLong("last_vote"));
                     }
@@ -233,15 +236,15 @@ public final class DragonEvent extends JavaPlugin {
     }
 
     public Pair<String, Object> getTopDamage(int position) {
-        List<Map.Entry<String, Long>> sortedEntries = new ArrayList<>(top10damage.entrySet());
+        List<Map.Entry<String, Double>> sortedEntries = new ArrayList<>(top10damage.entrySet());
         sortedEntries.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
 
         if (position <= sortedEntries.size()) {
-            Map.Entry<String, Long> entry = sortedEntries.get(position - 1);
+            Map.Entry<String, Double> entry = sortedEntries.get(position - 1);
             return new Pair<>(entry.getKey(), entry.getValue());
         }
 
-        return new Pair<>("none", 0L);
+        return new Pair<>("none", 0.0d);
     }
 
     private Pair<String, Object> getPair(int position, Map<String, Integer> top10kills) {

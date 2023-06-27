@@ -8,7 +8,11 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.text.DecimalFormat;
+
 public class PlaceholderManager extends PlaceholderExpansion {
+
+    private final DecimalFormat DF = new DecimalFormat("#.##");
 
     @Override
     public boolean canRegister() {
@@ -84,7 +88,7 @@ public class PlaceholderManager extends PlaceholderExpansion {
                 case "kills":
                     return String.valueOf(dePlayer.getKills());
                 case "damage":
-                    return String.valueOf(dePlayer.getDamage());
+                    return DF.format(dePlayer.getDamage());
                 case "votes":
                     return String.valueOf(dePlayer.getVotes());
             }
@@ -105,7 +109,7 @@ public class PlaceholderManager extends PlaceholderExpansion {
             case "kills":
                 return isPlayer ? DragonEvent.getInstance().getTopKills(position).getKey() : String.valueOf(DragonEvent.getInstance().getTopKills(position).getValue());
             case "damage":
-                return isPlayer ? DragonEvent.getInstance().getTopDamage(position).getKey() : String.valueOf(DragonEvent.getInstance().getTopDamage(position).getValue());
+                return isPlayer ? DragonEvent.getInstance().getTopDamage(position).getKey() : DF.format(DragonEvent.getInstance().getTopDamage(position).getValue());
             case "votes":
                 return isPlayer ? DragonEvent.getInstance().getTopVotes(position).getKey() : String.valueOf(DragonEvent.getInstance().getTopVotes(position).getValue());
         }

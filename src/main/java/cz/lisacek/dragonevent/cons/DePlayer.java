@@ -6,7 +6,7 @@ public class DePlayer {
 
     private int kills = 0;
 
-    private long damage = 0;
+    private double damage = 0;
 
     private int votes = 0;
     private long lastVote = 0;
@@ -27,11 +27,11 @@ public class DePlayer {
         return kills;
     }
 
-    public long getDamage() {
+    public double getDamage() {
         return damage;
     }
 
-    public void setDamage(long damage) {
+    public void setDamage(double damage) {
         this.damage = damage;
     }
 
