@@ -89,6 +89,10 @@ public final class DragonEvent extends JavaPlugin {
         // Schedule tasks
         scheduleTasks();
 
+        // Start metrics
+        Console.info("&7Starting metrics...");
+        new Metrics(this, 18892);
+
         Console.info("&7Plugin &aenabled&7!");
     }
 
@@ -133,8 +137,6 @@ public final class DragonEvent extends JavaPlugin {
 
         connection.update(statsTableQuery);
         connection.update(votesTableQuery);
-        Console.info("&7Starting metrics...");
-        new Metrics(this, 18892);
         Console.info("&7Database tables created!");
     }
 
