@@ -99,7 +99,7 @@ public class VoteManager {
         DragonEvent.getInstance().getConnection().query("SELECT * FROM de_stats ORDER BY damage DESC LIMIT 10").thenAcceptAsync(rs -> {
             try {
                 while (rs.next()) {
-                    top10.put(rs.getString("player"), rs.getLong("damage"));
+                    top10.put(rs.getString("player"), Long.parseLong(String.valueOf(rs.getDouble("damage"))));
                 }
             } catch (Exception e) {
                 e.printStackTrace();

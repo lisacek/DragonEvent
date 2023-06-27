@@ -147,7 +147,7 @@ public final class DragonEvent extends JavaPlugin {
                     DePlayer dePlayer = new DePlayer(p.getName());
                     if (rs.next()) {
                         dePlayer.setKills(rs.getInt("kills"));
-                        dePlayer.setDamage(rs.getLong("damage"));
+                        dePlayer.setDamage(Long.parseLong(String.valueOf(rs.getDouble("damage"))));
                         dePlayer.setVotes(rs.getInt("votes"));
                         dePlayer.setLastVote(rs.getLong("last_vote"));
                     }

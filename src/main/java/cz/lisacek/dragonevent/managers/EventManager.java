@@ -141,7 +141,7 @@ public class EventManager {
                     if (rs.next()) {
                         DePlayer dePlayer = new DePlayer(offlinePlayer.getName());
                         dePlayer.setKills(rs.getInt("kills"));
-                        dePlayer.setDamage(rs.getLong("damage"));
+                        dePlayer.setDamage(Long.parseLong(String.valueOf(rs.getDouble("damage"))));
                         dePlayer.setVotes(rs.getInt("votes"));
                         dePlayer.setLastVote(rs.getLong("last_vote"));
                         EventManager.getINSTANCE().getPlayerMap().put(offlinePlayer.getName(), dePlayer);

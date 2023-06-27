@@ -71,7 +71,7 @@ public class EventsListener implements Listener {
                 if (rs.next()) {
                     DePlayer dePlayer = new DePlayer(event.getPlayer().getName());
                     dePlayer.setKills(rs.getInt("kills"));
-                    dePlayer.setDamage(rs.getLong("damage"));
+                    dePlayer.setDamage(Long.parseLong(String.valueOf(rs.getDouble("damage"))));
                     dePlayer.setVotes(rs.getInt("votes"));
                     dePlayer.setLastVote(rs.getLong("last_vote"));
                     EventManager.getINSTANCE().getPlayerMap().put(event.getPlayer().getName(), dePlayer);
