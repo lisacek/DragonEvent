@@ -21,12 +21,33 @@ votifier:
 
     # Should we receive offline votes
     offline-votes: true
+    offline-vote-received:
+      messages:
+        none:
+          - "&7You have no offline vote rewards pending!"
+        claim:
+          - "&aYou have received your offline rewards!"
+      join-message:
+        enable: true
+        messages:
+          - "&7You have &6%rewards% &7offline vote rewards pending /offlinewards to claim them!"
 
     # Should player be rewarded for voting
     vote-reward:
-      enable: false
+      enable: true
+      # Default commands to execute
       commands:
         - 'tellraw %player% {"text":"Here is your reward!"}'
+      services:
+        # Should we enable rewards for specific service
+        enable: false
+        # Rewards for specific service if not found here: vote-reward.commands
+        # will be executed
+        1:
+          name: "topg"
+          commands:
+            - 'tellraw %player% {"text":"You have voted on topg.org!"}'
+
 
     # Should we display vote goal as bossbar
     bossbar:
@@ -40,7 +61,7 @@ votifier:
     announce-votes:
       enable: true
       message:
-        - "&7%player% &7has voted for the server! /vote"
+        - "&7%player% &7has voted for the server on &6%service%&7! /vote"
 
     # Should we announce when dragon spawns
     announce-spawn:
@@ -113,11 +134,11 @@ rewards:
   enable: true
   top:
     1:
-      - 'tellraw %player% {"text":"You voted 4 times and got a special reward!"}'
+      - 'tellraw %player% {"text":"You got an reward for damaging dragon!"}'
     2:
-      - 'tellraw %player% {"text":"You voted 4 times and got a special reward!2"}'
+      - 'tellraw %player% {"text":"You got an reward for damaging dragon!"}'
     3:
-      - 'tellraw %player% {"text":"You voted 4 times and got a special reward!3"}'
+      - 'tellraw %player% {"text":"You got an reward for damaging dragon!"}'
   # Chance to get reward
   regular:
     enable: true

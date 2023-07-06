@@ -9,3 +9,8 @@ commands:
       - de
   vote:
   votetop:
+  offlinewards:
+    aliases:
+      - ow
+      - claimoffline
+      - claimoff

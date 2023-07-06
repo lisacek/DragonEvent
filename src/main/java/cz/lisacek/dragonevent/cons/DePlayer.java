@@ -1,5 +1,8 @@
 package cz.lisacek.dragonevent.cons;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DePlayer {
 
     private final String name;
@@ -10,6 +13,10 @@ public class DePlayer {
 
     private int votes = 0;
     private long lastVote = 0;
+
+    private final List<List<String>> offlineRewards = new ArrayList<>();
+
+    private int offlineRewardsCount = 0;
 
     public DePlayer(String name) {
         this.name = name;
@@ -39,12 +46,24 @@ public class DePlayer {
         this.kills = kills;
     }
 
+    public int getOfflineRewardsCount() {
+        return offlineRewardsCount;
+    }
+
+    public void setOfflineRewardsCount(int offlineRewardsCount) {
+        this.offlineRewardsCount = offlineRewardsCount;
+    }
+
     public void setVotes(int votes) {
         this.votes = votes;
     }
 
     public void setLastVote(long lastVote) {
         this.lastVote = lastVote;
+    }
+
+    public List<List<String>> getOfflineRewards() {
+        return offlineRewards;
     }
 
     @Override

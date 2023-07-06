@@ -1,6 +1,7 @@
 package cz.lisacek.dragonevent;
 
 import cz.lisacek.dragonevent.commands.DragonEventCommand;
+import cz.lisacek.dragonevent.commands.OfflineRewards;
 import cz.lisacek.dragonevent.commands.VoteCommand;
 import cz.lisacek.dragonevent.commands.VoteTopCommand;
 import cz.lisacek.dragonevent.cons.DePlayer;
@@ -15,6 +16,7 @@ import cz.lisacek.dragonevent.sql.ConnectionInfo;
 import cz.lisacek.dragonevent.sql.DatabaseConnection;
 import cz.lisacek.dragonevent.utils.Console;
 import cz.lisacek.dragonevent.utils.UpdateChecker;
+import cz.lisacek.dragonevent.utils.UpdateConfig;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -38,12 +40,15 @@ public final class DragonEvent extends JavaPlugin {
     private Map<String, Integer> top10kills;
     private Map<String, Double> top10damage;
 
+    private Map<String, List<String>> voteServices = new HashMap<>();
+
 
     @Override
     public void onEnable() {
         instance = this;
         // Plugin startup logic
         loadConfig();
+        UpdateConfig.run();
         Objects.requireNonNull(getCommand("dragonevent")).setExecutor(new DragonEventCommand());
         getServer().getPluginManager().registerEvents(new EventsListener(), this);
 
@@ -135,8 +140,25 @@ public final class DragonEvent extends JavaPlugin {
                         "    last_vote BIGINT" +
                         ");";
 
+        String offlineVotes = isSqlite ? "create TABLE IF NOT EXISTS de_offline_votes" +
+                "(" +
+                "    id       integer" +
+                "        constraint offline_votes_pk" +
+                "            primary key autoincrement," +
+                "    username varchar(16)," +
+                "    service  varchar(255)," +
+                "    time     bigint" +
+                ");" : "create TABLE IF NOT EXISTS de_offline_votes" +
+                "(" +
+                "    id       integer primary key auto_increment," +
+                "    username varchar(16)," +
+                "    service  varchar(255)," +
+                "    time     bigint" +
+                ");";
+
         connection.update(statsTableQuery);
         connection.update(votesTableQuery);
+        connection.update(offlineVotes);
         Console.info("&7Database tables created!");
     }
 
@@ -204,6 +226,16 @@ public final class DragonEvent extends JavaPlugin {
                 }
                 if (config.getBoolean("votifier.settings.reminder.enable")) {
                     VoteManager.getINSTANCE().reminderTask();
+                }
+                if (config.getBoolean("votifier.settings.offline-votes", false)) {
+                    getCommand("offlinewards").setExecutor(new OfflineRewards());
+                }
+                if (config.getBoolean("votifier.settings.vote-reward.services.enable", false)) {
+                    config.getConfigurationSection("votifier.settings.vote-reward.services").getKeys(false).forEach(service -> {
+                        if (service.equalsIgnoreCase("enable")) return;
+                        voteServices.put(config.getString("votifier.settings.vote-reward.services." + service + ".name"), config.getStringList("votifier.settings.vote-reward.services." + service + ".commands"));
+                    });
+                    Console.info("&7Vote reward services loaded! (&a" + voteServices.size() + "&7)");
                 }
             } else {
                 message += "but votifier function is disabled. &c:(!";

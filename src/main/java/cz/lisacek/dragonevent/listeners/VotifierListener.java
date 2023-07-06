@@ -65,10 +65,6 @@ public class VotifierListener implements Listener {
         YamlConfiguration config = DragonEvent.getInstance().getConfig();
         String playerName = event.getVote().getUsername();
         Player p = Bukkit.getPlayer(playerName);
-        if (p == null) {
-            boolean offlineVotes = config.getBoolean("votifier.settings.offline-votes");
-            if (!offlineVotes) return;
-        }
         if (config.getBoolean("votifier.settings.announce-votes.enable")) {
             Bukkit.getOnlinePlayers().forEach(player -> {
                 if (!player.getName().equals(playerName)) {
@@ -82,6 +78,15 @@ public class VotifierListener implements Listener {
                     }
                 }
             });
+        }
+
+        if (p == null) {
+            boolean offlineVotes = config.getBoolean("votifier.settings.offline-votes");
+            if (!offlineVotes) return;
+            DragonEvent.getInstance().getConnection().update(connection.getInfo().isSqlLite() ?
+                    "INSERT OR IGNORE INTO de_offline_votes (username, service, time) VALUES (?,?,?)" :
+                    "INSERT IGNORE INTO de_offline_votes (username, service, time) VALUES (?,?,?)", playerName, event.getVote().getServiceName(), System.currentTimeMillis());
+            return;
         }
 
         if (config.getBoolean("votifier.settings.vote-reward.enable")) {
