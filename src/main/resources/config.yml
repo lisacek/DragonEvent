@@ -17,10 +17,13 @@ database:
 votifier:
   settings:
     # Disable votifier hook
-    enable: true
+    enable: false
 
     # Should we receive offline votes
     offline-votes: true
+    # delete older than in seconds one week = 604800 seconds
+    # 0 to disable: NOT RECOMMENDED
+    offline-votes-delete-after: 604800
     offline-vote-received:
       messages:
         none:

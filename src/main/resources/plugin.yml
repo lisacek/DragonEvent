@@ -8,7 +8,9 @@ commands:
     aliases:
       - de
   vote:
+  resetvotes:
   votetop:
+  modifyvotes:
   offlinewards:
     aliases:
       - ow

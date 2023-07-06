@@ -1,9 +1,6 @@
 package cz.lisacek.dragonevent;
 
-import cz.lisacek.dragonevent.commands.DragonEventCommand;
-import cz.lisacek.dragonevent.commands.OfflineRewards;
-import cz.lisacek.dragonevent.commands.VoteCommand;
-import cz.lisacek.dragonevent.commands.VoteTopCommand;
+import cz.lisacek.dragonevent.commands.*;
 import cz.lisacek.dragonevent.cons.DePlayer;
 import cz.lisacek.dragonevent.cons.Dragon;
 import cz.lisacek.dragonevent.cons.Pair;
@@ -162,7 +159,7 @@ public final class DragonEvent extends JavaPlugin {
         Console.info("&7Database tables created!");
     }
 
-    private void loadPlayerData() {
+    public void loadPlayerData() {
         Bukkit.getScheduler().runTaskLater(this, () -> {
             Console.info("&7Loading player data from the database...");
 
@@ -188,7 +185,7 @@ public final class DragonEvent extends JavaPlugin {
         }, 1);
     }
 
-    private void loadTopPlayers() {
+    public void loadTopPlayers() {
         Bukkit.getScheduler().runTaskLater(this, () -> {
             Console.info("&7Loading top players...");
 
@@ -198,6 +195,13 @@ public final class DragonEvent extends JavaPlugin {
 
             Console.info("&7Top players loaded!");
         }, 1);
+    }
+
+    //reset top
+    public void resetTopPlayers() {
+        top10votes.clear();
+        top10kills.clear();
+        top10damage.clear();
     }
 
     private void checkPlaceholderAPI() {
@@ -229,6 +233,9 @@ public final class DragonEvent extends JavaPlugin {
                 }
                 if (config.getBoolean("votifier.settings.offline-votes", false)) {
                     getCommand("offlinewards").setExecutor(new OfflineRewards());
+                    offlineVotesCleaner();
+                    getCommand("resetvotes").setExecutor(new ResetVotesCommand());
+                    getCommand("modifyvotes").setExecutor(new ModifyVotesCommand());
                 }
                 if (config.getBoolean("votifier.settings.vote-reward.services.enable", false)) {
                     config.getConfigurationSection("votifier.settings.vote-reward.services").getKeys(false).forEach(service -> {
@@ -244,6 +251,17 @@ public final class DragonEvent extends JavaPlugin {
         } else {
             Console.info("&cVotifier plugin not found, function is unavailable!");
         }
+    }
+
+    private void offlineVotesCleaner() {
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            int deleteOlderThan = config.getInt("votifier.settings.offline-votes-delete-after", 604800);
+            if (deleteOlderThan != 0) {
+                long currentTimeMillis = System.currentTimeMillis();
+                long olderThanMillis = currentTimeMillis - (deleteOlderThan * 1000L);
+                connection.update("DELETE FROM de_offline_votes WHERE time < ?", olderThanMillis);
+            }
+        }, 0, 72000);
     }
 
     private void scheduleTasks() {

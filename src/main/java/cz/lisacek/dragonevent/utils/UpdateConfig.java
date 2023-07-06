@@ -55,7 +55,7 @@ public class UpdateConfig {
                 Console.info("&7Updated config with &a" + updated + " &7new values.");
                 config.save(DragonEvent.getInstance().getDataFolder() + File.separator + "config.yml");
             } else {
-                Console.info("&aConfig is up to date.");
+                Console.info("&7Config is up to date.");
             }
         } catch (IOException e) {
             e.printStackTrace();
