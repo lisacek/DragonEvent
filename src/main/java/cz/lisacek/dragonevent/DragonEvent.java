@@ -232,7 +232,7 @@ public final class DragonEvent extends JavaPlugin {
                     VoteManager.getINSTANCE().reminderTask();
                 }
                 if (config.getBoolean("votifier.settings.offline-votes", false)) {
-                    getCommand("offlinewards").setExecutor(new OfflineRewards());
+                    getCommand("offlinewards").setExecutor(new OfflineRewardsCommand());
                     offlineVotesCleaner();
                     getCommand("resetvotes").setExecutor(new ResetVotesCommand());
                     getCommand("modifyvotes").setExecutor(new ModifyVotesCommand());

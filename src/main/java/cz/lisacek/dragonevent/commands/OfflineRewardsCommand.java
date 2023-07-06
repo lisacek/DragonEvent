@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class OfflineRewards implements CommandExecutor {
+public class OfflineRewardsCommand implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
         DePlayer dePlayer = EventManager.getINSTANCE().getDePlayer(commandSender.getName());
