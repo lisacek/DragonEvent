@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
 
@@ -88,14 +89,12 @@ public class EventManager {
 
     @SuppressWarnings("deprecation")
     private Dragon setupEntity(SpawnOptions spawnOptions, double hp, EnderDragon entity) {
+        entity.setMaxHealth(hp);
         entity.setHealth(hp);
         entity.setPhase(spawnOptions.isMoving() ? EnderDragon.Phase.CIRCLING : EnderDragon.Phase.HOVER);
         entity.setGlowing(spawnOptions.isGlowing());
         if (spawnOptions.isGlowing()) {
             GlowHelper.setGlowing(entity, ChatColor.valueOf(DragonEvent.getInstance().getConfig().getString("dragon.glow.color")));
-        }
-        if (spawnOptions.isMoving()) {
-            entity.setMaxHealth(hp);
         }
         Dragon d = new Dragon(entity, spawnOptions.getHp(), spawnOptions.isMoving());
         dragonList.add(d);
