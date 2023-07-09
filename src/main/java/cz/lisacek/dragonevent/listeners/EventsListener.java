@@ -43,6 +43,16 @@ public class EventsListener implements Listener {
     }
 
     @EventHandler
+    public void onPlayerHit(EntityDamageByEntityEvent event) {
+        YamlConfiguration config = DragonEvent.getInstance().getConfig();
+        if(!config.getBoolean("dragon.modify-damage.enable")) return;
+        if (event.getDamager() instanceof EnderDragon) {
+            event.setDamage(config.getDouble("dragon.modify-damage.damage"));
+        }
+    }
+
+
+    @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         DatabaseConnection connection = DragonEvent.getInstance().getConnection();
         loadPlayer(event, connection);

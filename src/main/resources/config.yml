@@ -122,6 +122,9 @@ dragon:
     rainbow: true
     color: RED
   health: 200
+  modify-damage:
+    enable: false
+    damage: 100
   # Should health increase with players
   dynamic-health:
     enable: false
