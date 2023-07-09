@@ -331,6 +331,7 @@ public class Dragon {
             announceHp.cancel();
         }
         if (dragon != null) {
+            dragon.setHealth(0);
             dragon.remove();
         }
     }
