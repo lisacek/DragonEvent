@@ -13,7 +13,7 @@ import cz.lisacek.dragonevent.sql.ConnectionInfo;
 import cz.lisacek.dragonevent.sql.DatabaseConnection;
 import cz.lisacek.dragonevent.utils.Console;
 import cz.lisacek.dragonevent.utils.UpdateChecker;
-import cz.lisacek.dragonevent.utils.UpdateConfig;
+import cz.lisacek.dragonevent.utils.ConfigUpdater;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -39,13 +39,15 @@ public final class DragonEvent extends JavaPlugin {
 
     private Map<String, List<String>> voteServices = new HashMap<>();
 
+    private int votes = 0;
+
 
     @Override
     public void onEnable() {
         instance = this;
         // Plugin startup logic
         loadConfig();
-        UpdateConfig.run();
+        ConfigUpdater.run();
         Objects.requireNonNull(getCommand("dragonevent")).setExecutor(new DragonEventCommand());
         getServer().getPluginManager().registerEvents(new EventsListener(), this);
 
@@ -153,9 +155,23 @@ public final class DragonEvent extends JavaPlugin {
                 "    time     bigint" +
                 ");";
 
+        String voteparty = isSqlite ? "create TABLE IF NOT EXISTS de_vote_party" +
+                    "(" +
+                    "    id  integer" +
+                    "        constraint de_vote_party_pk" +
+                    "            primary key," +
+                    "    num integer" +
+                    ");" :
+                "create TABLE IF NOT EXISTS de_vote_party" +
+                        "(" +
+                        "    id  integer primary key," +
+                        "    num integer" +
+                        ");";
+
         connection.update(statsTableQuery);
         connection.update(votesTableQuery);
         connection.update(offlineVotes);
+        connection.update(voteparty);
         Console.info("&7Database tables created!");
     }
 
@@ -181,9 +197,23 @@ public final class DragonEvent extends JavaPlugin {
                 }
             }));
 
+            connection.update(connection.getInfo().isSqlLite()  ? "INSERT OR IGNORE INTO de_vote_party (id, num) VALUES (1, 0)"
+                    :  "INSERT IGNORE INTO de_vote_party (id, num) VALUES (1, 0)");
+            connection.query("SELECT * FROM de_vote_party WHERE id = 1").thenAcceptAsync(rs -> {
+                try {
+                    if (rs.next()) {
+                       VoteManager.getINSTANCE().setVotes(rs.getInt("num"));
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            });
+
             Console.info("&7Player data loaded!");
         }, 1);
     }
+
+    //
 
     public void loadTopPlayers() {
         Bukkit.getScheduler().runTaskLater(this, () -> {

@@ -60,7 +60,14 @@ public class VoteManager {
         if (votes >= votesNeeded) {
             votes = 0;
             dragon = EventManager.getINSTANCE().spawnDragon(config, dragonLocList);
+            DragonEvent.getInstance().getConnection().update("UPDATE de_vote_party SET num = ? WHERE id = ?", 0, 1);
+        } else {
+            DragonEvent.getInstance().getConnection().update("UPDATE de_vote_party SET num = ? WHERE id = ?", votes, 1);
         }
+    }
+
+    public void setVotes(int votes) {
+        this.votes = votes;
     }
 
     //get top 10 de players by votes
