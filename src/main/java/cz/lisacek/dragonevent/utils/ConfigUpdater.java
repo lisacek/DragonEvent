@@ -6,7 +6,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.*;
 import java.nio.file.Files;
 
-public class UpdateConfig {
+public class ConfigUpdater {
 
     // we need to add and set new sections etc
     public static void run() {
